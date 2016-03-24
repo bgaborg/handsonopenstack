@@ -14,6 +14,31 @@ heat_template_version: 2014-10-16
 description: Simple stack
 
 parameters:
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    default: cirros0.3.2
+  flavor:
+    type: string
+    label: Flavor
+    description: Flavor to be used
+    default: m1.small
+    constraints:
+      - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
+        description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.    
+  private_net_id:
+    type: string
+    description: Id of the private network for the compute server
+  private_subnet_id:
+    type: string
+    description: Id of the private sub network for the compute server
+  public_net_id:
+    type: string
+    description: Id of the public network for the compute server 
+  security_group_id:
+    type: string
+    description: Security group id
   server_count: 
     type: number
     description: Number of HA server pairs to create
@@ -24,4 +49,13 @@ resources:
     type: OS::Heat::ResourceGroup
     properties:
       count: { get_param: server_count }
-      resource_def: {type: ha_server_pair.yaml}
+      resource_def: 
+        type: ha_server_pair.yaml
+        properties:
+          image_id: { get_param: image_id }
+          flavor: { get_param: flavor }
+          private_net_id: { get_param: private_net_id }
+          private_subnet_id: { get_param: private_subnet_id }
+          public_net_id: { get_param: public_net_id }
+          security_group_id: { get_param: security_group_id }
+
