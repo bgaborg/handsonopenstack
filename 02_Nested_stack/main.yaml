@@ -1,0 +1,27 @@
+#    write heat templates of a scaleable application with HA pairs of servers
+#        main template with a ResourceGroup with resource type defined in separate template
+#        separate template defining a pair of servers
+#    create stack via heat cli, list stack resources (deep listing with the "-n" option)
+#    update stack with different count values on the ResourceGroup (scale out, scale in)
+
+# PUB_NET_ID=$(neutron net-show --name pub_net -F id -f value)
+# PRESERVED_NET_ID=$(neutron net-show --name preservedNetwork -F id -f value)
+# PRESERVED_SUBNET_ID=$(neutron subnet-show --name preservedSubnet -F id -f value)
+# heat stack-create botosjeti --template-file SimpleStack.yaml -P "security_group_id=default;image_id=cirros0.3.2;public_net_id=$PUB_NET_ID;private_net_id=$PRESERVED_NET_ID;private_subnet_id=$PRESERVED_SUBNET_ID"
+
+heat_template_version: 2014-10-16
+
+description: Simple stack
+
+parameters:
+  server_count: 
+    type: number
+    description: Number of HA server pairs to create
+    default: 1
+
+resources:
+  ha_resource_group:
+    type: OS::Heat::ResourceGroup
+    properties:
+      count: { get_param: server_count }
+      resource_def: {type: ha_server_pair.yaml}
