@@ -7,11 +7,11 @@
 # PUB_NET_ID=$(neutron net-show --name pub_net -F id -f value)
 # PRESERVED_NET_ID=$(neutron net-show --name preservedNetwork -F id -f value)
 # PRESERVED_SUBNET_ID=$(neutron subnet-show --name preservedSubnet -F id -f value)
-# heat stack-create botosjeti --template-file SimpleStack.yaml -P "security_group_id=default;image_id=cirros0.3.2;public_net_id=$PUB_NET_ID;private_net_id=$PRESERVED_NET_ID;private_subnet_id=$PRESERVED_SUBNET_ID"
+# heat stack-create my-nested-stack --template-file 02_Nested_stack/main.yaml -P "security_group_id=default;image_id=cirros0.3.2;public_net_id=$PUB_NET_ID;private_net_id=$PRESERVED_NET_ID;private_subnet_id=$PRESERVED_SUBNET_ID;server_count=2"
 
 heat_template_version: 2014-10-16
 
-description: Simple stack
+description: Nested stack
 
 parameters:
   image_id:
@@ -60,5 +60,9 @@ resources:
           security_group_id: { get_param: security_group_id }
 
 outputs:
-  server1_floating_ip: { get_attr: [ha_resource_group, floating_ip_address1] }
-  server2_floating_ip: { get_attr: [ha_resource_group, floating_ip_address2] }  
+  server1_floating_ip: 
+    description: Floating IP of the first server
+    value: { get_attr: [ha_resource_group, floating_ip_address1] }
+  server2_floating_ip: 
+    description: Floating IP of the second server
+    value: { get_attr: [ha_resource_group, floating_ip_address2] } 
