@@ -62,7 +62,7 @@ resources:
 outputs:
   server1_floating_ip: 
     description: Floating IP of the first server
-    value: { get_attr: [ha_resource_group, floating_ip_address1] }
+    value: { get_attr: [ha_resource_group, floating_ip1] }
   server2_floating_ip: 
     description: Floating IP of the second server
-    value: { get_attr: [ha_resource_group, floating_ip_address2] } 
+    value: { get_attr: [ha_resource_group, floating_ip2] } 
