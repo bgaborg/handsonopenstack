@@ -59,3 +59,6 @@ resources:
           public_net_id: { get_param: public_net_id }
           security_group_id: { get_param: security_group_id }
 
+outputs:
+  server1_floating_ip: { get_attr: [ha_resource_group, floating_ip_address1] }
+  server2_floating_ip: { get_attr: [ha_resource_group, floating_ip_address2] }  
