@@ -62,7 +62,6 @@ resources:
       port_id: { get_resource: server1_port }
 
 outputs:
-
   floating_ip:
     description: The floating IP of the server
     value: { get_attr: [server1_floating_ip, floating_ip_address] }
