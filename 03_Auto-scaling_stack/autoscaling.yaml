@@ -1,0 +1,84 @@
+#    write heat templates of a scaleable application with HA pairs of servers
+#        main template with a ResourceGroup with resource type defined in separate template
+#        separate template defining a pair of servers
+#    create stack via heat cli, list stack resources (deep listing with the "-n" option)
+#    update stack with different count values on the ResourceGroup (scale out, scale in)
+
+# PUB_NET_ID=$(neutron net-show --name pub_net -F id -f value)
+# PRESERVED_NET_ID=$(neutron net-show --name preservedNetwork -F id -f value)
+# PRESERVED_SUBNET_ID=$(neutron subnet-show --name preservedSubnet -F id -f value)
+# heat stack-create my-nested-stack --template-file autoscaling.yaml -P "security_group_id=default;image_id=cirros0.3.2;public_net_id=$PUB_NET_ID;private_net_id=$PRESERVED_NET_ID;private_subnet_id=$PRESERVED_SUBNET_ID" -e environment.yaml
+# big w00ts: https://support.rc.nectar.org.au/docs/heat/oddities-and-gotchas
+
+heat_template_version: 2014-10-16
+
+description: Nested stack
+
+parameters:
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    default: cirros0.3.2
+  flavor:
+    type: string
+    label: Flavor
+    description: Flavor to be used
+    default: m1.tiny
+    constraints:
+      - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
+        description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.    
+  private_net_id:
+    type: string
+    description: Id of the private network for the compute server
+  private_subnet_id:
+    type: string
+    description: Id of the private sub network for the compute server
+  public_net_id:
+    type: string
+    description: Id of the public network for the compute server 
+  security_group_id:
+    type: string
+    description: Security group id
+
+resources:
+  scaling_grouppa:
+    type: OS::Heat::AutoScalingGroup
+    properties:
+      desired_capacity: 3
+      max_size: 5
+      min_size: 1
+      resource:
+        type: OS::Nova::Server::SimpleServerFromTemplate
+        properties:
+          image_id: { get_param: image_id }
+          flavor: { get_param: flavor }
+          private_net_id: { get_param: private_net_id }
+          private_subnet_id: { get_param: private_subnet_id }
+          public_net_id: { get_param: public_net_id }
+          security_group_id: { get_param: security_group_id }
+
+  scale_out:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: scaling_grouppa }
+      scaling_adjustment: 1
+
+  scale_in:
+    type: OS::Heat::ScalingPolicy
+    properties:
+      adjustment_type: change_in_capacity
+      auto_scaling_group_id: { get_resource: scaling_grouppa }
+      scaling_adjustment: -1
+
+outputs:
+  server_floating_ip:
+    description: Floating IP of the first server
+    value: { get_attr: [scaling_grouppa, floating_ip] }
+  scale_out_url:
+    description: Scale out signal_url
+    value: { get_attr: [scale_out, signal_url] }
+  scale_in_url:
+    description: Scale in signal_url
+    value: {  get_attr: [scale_in, signal_url] }
