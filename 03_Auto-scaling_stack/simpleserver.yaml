@@ -16,15 +16,15 @@ parameters:
     constraints:
       - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
         description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.    
-  private_net_id:
+  private_net:
     type: string
     description: Id of the private network for the compute server
-  private_subnet_id:
+  private_subnet:
     type: string
     description: Id of the private sub network for the compute server
-  public_net_id:
+  public_net:
     type: string
-    description: Id of the public network for the compute server 
+    description: Id of the public network for the compute server
   security_group_id:
     type: string
     description: Security group id
@@ -42,15 +42,15 @@ resources:
   server_port:
     type: OS::Neutron::Port
     properties:
-      network_id: { get_param: private_net_id }
+      network: { get_param: private_net }
       fixed_ips:
-        - subnet_id: { get_param: private_subnet_id }
+        - subnet: { get_param: private_subnet }
       security_groups: [{ get_param: security_group_id }]
 
   server_floating_ip:
     type: OS::Neutron::FloatingIP
     properties:
-      floating_network_id: { get_param: public_net_id }
+      floating_network: { get_param: public_net }
       port_id: { get_resource: server_port }
 
 outputs:

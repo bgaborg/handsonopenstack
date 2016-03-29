@@ -36,7 +36,7 @@ parameters:
     description: Id of the private sub network for the compute server
   public_net_id:
     type: string
-    description: Id of the public network for the compute server 
+    description: Id of the public network for the compute server
   security_group_id:
     type: string
     description: Security group id
