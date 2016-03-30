@@ -1,0 +1,6 @@
+Snapshots
+    * create snapshot of stack
+    * restore stack from snapshot
+
+heat stack-snapshot stack
+heat stack-restore stack <UUID>
