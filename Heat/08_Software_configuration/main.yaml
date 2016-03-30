@@ -5,17 +5,19 @@ description: Software configuration
 parameters:
   message:
     type: string
+    label: Message
+    description: Message to inject into user data
     default: Hello world
   image_id:
     type: string
     label: Image ID
     description: Image to be used for compute instance
-    default: cirros0.3.2
+    default: rhel-7.1-64bit-customized
   flavor:
     type: string
     label: Flavor
     description: Flavor to be used
-    default: m1.tiny
+    default: m1.small
     constraints:
       - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
         description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.
