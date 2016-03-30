@@ -1,0 +1,4 @@
+resource_registry:
+  resources:
+    myserver:
+      hooks: pre-create
