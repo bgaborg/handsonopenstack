@@ -1,0 +1,86 @@
+heat_template_version: 2014-10-16
+
+description: Software configuration with OS::Heat::SoftwareConfig
+
+parameters:
+  message:
+    type: string
+    label: Message
+    description: Message to inject into user data
+    default: Hello world
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    default: rhel-7.1-64bit-customized
+  flavor:
+    type: string
+    label: Flavor
+    description: Flavor to be used
+    default: m1.small
+    constraints:
+      - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
+        description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.
+  public_net:
+    type: string
+    description: Name of the public network for the compute server
+    default: pub_net
+  private_net:
+    type: string
+    description: Name of the private network for the compute server
+    default: preservedNetwork
+  private_subnet:
+    type: string
+    description: Name of the private sub network for the compute server
+    default: preservedSubnet
+  security_group_id:
+    type: string
+    description: Security group
+    default: preservedSecurityGroup
+
+resources:
+  server:
+    type: OS::Nova::Server
+    properties:
+      user_data_format: RAW
+      user_data: { get_resource: server_boot_script }
+      name:
+        str_replace:
+          template: SoftwareConfig_postfix
+          params:
+            postfix: { get_param: message }
+      key_name: preservedSshKey
+      image: { get_param: image_id }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: server_port }
+
+  server_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: private_net }
+      fixed_ips:
+        - subnet: { get_param: private_subnet }
+      security_groups: [{ get_param: security_group_id }]
+
+  server_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server_port }
+
+  server_boot_script:
+    type: OS::Heat::SoftwareConfig
+    properties:
+      config:
+        str_replace:
+          template: |
+            #!/bin/bash
+            echo "This is an important message: msg"
+          params:
+            msg: { get_param: message }
+
+outputs:
+  floating_ip:
+    description: The floating IP of the server
+    value: { get_attr: [server_floating_ip, floating_ip_address] }
