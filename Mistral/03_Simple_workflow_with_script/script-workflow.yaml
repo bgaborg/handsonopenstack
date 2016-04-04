@@ -1,6 +1,12 @@
 # create workflow that generates a sequence of random bits
 # input: length of sequence
 # output: string of random bits (0-s and 1-s)
+#
+# To run: 
+# mistral workflow-create script-workflow.yaml
+# mistral execution-create generate_random_bits '{"length":10}'
+# mistral execution-get-output <ID returned by execution-create>
+
 ---
 version: '2.0'
 generate_random_bits:
