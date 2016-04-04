@@ -1,0 +1,25 @@
+# create workflow that generates a sequence of random bits
+# input: length of sequence
+# output: string of random bits (0-s and 1-s)
+---
+version: '2.0'
+generate_random_bits:
+  description: Generate random bits
+  type: direct
+  input:
+    - length
+  output: # Output: string of random bits
+    bits: <% $.bits %>
+  tasks:
+    generate_bits:
+      action: std.javascript
+      input:
+        context: <% $ %>
+        script: |
+          var s = "";
+          for (var i = 0; i < $.length; i++) {
+            s += Math.floor(Math.random() + 0.5);
+          }
+          return s;
+      publish:
+        bits: <% $.generate_bits %>
