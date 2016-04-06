@@ -1,0 +1,79 @@
+# place pre-create and pre-update hooks onto some resources in a template (post-* hooks might not be supported yet)
+# use an environment file for this purpose
+# create the stack, observe the process stopping (resource in INIT_COMPLETE state)
+# delete the hooks, observe the process resuming
+#
+# http://docs.openstack.org/cli-reference/heat.html
+# heat stack-create my-server-with-hooks --template-file simpleserver.yaml -P "security_group_id=preservedSecurityGroup;public_net=pub_net;private_net=preservedNetwork;private_subnet=preservedSubnet" -e environment.yaml
+# heat resource-list my-server-with-hooks -n 10
+#
+# Signal to continue:
+#  heat resource-signal -D "{\"unset_hook\": \"pre-create\"}" my-server-with-hooks myserver
+
+heat_template_version: 2014-10-16
+
+description: Simple server for nested stack
+
+parameters:
+  server_postfix:
+    type: string
+    default: ""
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+    default: cirros0.3.2
+  flavor:
+    type: string
+    label: Flavor
+    description: Flavor to be used
+    default: m1.tiny
+    constraints:
+      - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
+        description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.    
+  private_net:
+    type: string
+    description: Id of the private network for the compute server
+  private_subnet:
+    type: string
+    description: Id of the private sub network for the compute server
+  public_net:
+    type: string
+    description: Id of the public network for the compute server
+  security_group_id:
+    type: string
+    description: Security group id
+
+resources:
+  myserver:
+    type: OS::Nova::Server
+    properties:
+      name:
+        str_replace:
+          template: hooks_server_postfix
+          params:
+            postfix: { get_param: server_postfix }
+      key_name: preservedSshKey
+      image: { get_param: image_id }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: server_port }
+
+  server_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: private_net }
+      fixed_ips:
+        - subnet: { get_param: private_subnet }
+      security_groups: [{ get_param: security_group_id }]
+
+  server_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server_port }
+
+outputs:
+  floating_ip:
+    description: The floating IP of the server
+    value: { get_attr: [server_floating_ip, floating_ip_address] }

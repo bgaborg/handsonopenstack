@@ -1,0 +1,45 @@
+# create workflow that creates a stack with a single server, waits until the stack is created, and executes a shell command on the server
+#     hint: use "mistral action-list" to see the available actions and their parameterization
+# input: none (heat template as a string literal in the workflow template)
+# output: standard output of executed command
+# view details of execution on all levels (execution-*, task-*, action-* commands)
+---
+version: '2.0'
+multi_task_workflow:
+  description: Creates a stack with a single server, waits until the stack is created, and executes a shell command on the server
+  type: direct
+  output: # Output: standard output of executed command
+    stack_names: <% $.stdout %>
+  tasks:
+    get_template:
+      action: heat.stacks_template
+      input:
+        stack_id: simpleserver.yaml
+      publish:
+        simple_server_template: <% $.get_template %>
+      on-success:
+        - create_stack
+    create_stack: # create a stack with a single server
+      action: heat.stacks_create
+      input:
+        stack_name: multi_task_server
+        template: <% $.simple_server_template %>
+      publish:
+        simple_server_ip: <% $.create_stack.floating_ip %>
+      on-success: wait_until_stack_is_created
+    wait_until_stack_is_created: # wait until the stack is created
+      action: heat.stacks_get
+      input:
+        stack_id: multi_task_server
+      on-success:
+        - wait_until_stack_is_created: <% $.wait_until_stack_is_created.stack_status=CREATE_IN_PROGRESS %>
+        - execute_cmd: <% $.wait_until_stack_is_created.stack_status=CREATE_COMPLETE %>
+    execute_cmd: # execute a shell command on the server
+      action: std.ssh
+      input:
+        host: <% $.simple_server_ip %>
+        username: cirros
+        password: cubswin:)
+        cmd: echo "Hello world"
+      publish:
+        stdout: <% $.execute_cmd %>
