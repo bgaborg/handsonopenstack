@@ -11,35 +11,48 @@ multi_task_workflow:
   output: # Output: standard output of executed command
     stack_names: <% $.stdout %>
   tasks:
-    get_template:
-      action: heat.stacks_template
-      input:
-        stack_id: simpleserver.yaml
-      publish:
-        simple_server_template: <% $.get_template %>
-      on-success:
-        - create_stack
     create_stack: # create a stack with a single server
       action: heat.stacks_create
       input:
         stack_name: multi_task_server
-        template: <% $.simple_server_template %>
+        template: {"outputs":{"floating_ip":{"description":"The floating IP of the server","value":{"get_attr":["server1_floating_ip","floating_ip_address"]}}},"heat_template_version":"2014-10-16","description":"Simple stack","parameters":{"public_net":{"default":"pub_net","type":"string","description":"Id of the public network for the compute server"},"security_group_id":{"default":"preservedSecurityGroup","type":"string","description":"Security group id"},"image_id":{"type":"string","description":"Image to be used for compute instance","label":"Image ID","default":"cirros0.3.4"},"private_subnet":{"default":"preservedSubnet","type":"string","description":"Id of the private sub network for the compute server"},"private_net":{"default":"preservedNetwork","type":"string","description":"Id of the private network for the compute server"},"flavor":{"default":"m1.tiny","label":"Flavor","type":"string","description":"Flavor to be used","constraints":[{"description":"Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.","allowed_values":["m1.tiny","m1.small","m1.medium","m1.large","m1.xlarge"]}]}},"resources":{"server1_port":{"type":"OS::Neutron::Port","properties":{"fixed_ips":[{"subnet":{"get_param":"private_subnet"}}],"network":{"get_param":"private_net"},"security_groups":[{"get_param":"security_group_id"}]}},"server1_floating_ip":{"type":"OS::Neutron::FloatingIP","properties":{"floating_network":{"get_param":"public_net"},"port_id":{"get_resource":"server1_port"}}},"server1":{"type":"OS::Nova::Server","properties":{"key_name":"preservedSshKey","flavor":{"get_param":"flavor"},"image":{"get_param":"image_id"},"networks":[{"port":{"get_resource":"server1_port"}}]}}}}
       publish:
-        simple_server_ip: <% $.create_stack.floating_ip %>
+        simple_stack_id: <% $.create_stack.stack.id %>
       on-success: wait_until_stack_is_created
     wait_until_stack_is_created: # wait until the stack is created
       action: heat.stacks_get
       input:
         stack_id: multi_task_server
+      timeout: 5
+      retry:
+        count: 5
+        delay: 3
       on-success:
         - wait_until_stack_is_created: <% $.wait_until_stack_is_created.stack_status=CREATE_IN_PROGRESS %>
-        - execute_cmd: <% $.wait_until_stack_is_created.stack_status=CREATE_COMPLETE %>
+        - get_floating_ip: <% $.wait_until_stack_is_created.stack_status=CREATE_COMPLETE %>
+        - throw_error:  <% $.wait_until_stack_is_created.stack_status!=CREATE_COMPLETE and $.wait_until_stack_is_created.stack_status!=CREATE_IN_PROGRESS %>
+      on-error:
+        - throw_error
+    get_floating_ip: 
+      action: heat.stacks_get
+      input:
+        stack_id: multi_task_server
+      publish:
+        simple_server_ip: <% $.get_floating_ip.outputs.output_value %>
+      on-success: execute_cmd
     execute_cmd: # execute a shell command on the server
       action: std.ssh
+      retry:
+        count: 3
+        delay: 5
       input:
-        host: <% $.simple_server_ip %>
+        host: <% $.simple_server_ip[0] %>
         username: cirros
         password: cubswin:)
         cmd: echo "Hello world"
       publish:
         stdout: <% $.execute_cmd %>
+    throw_error:
+      action: std.noop
+      publish: 
+        error: Oh noes
