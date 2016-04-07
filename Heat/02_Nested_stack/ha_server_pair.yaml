@@ -12,22 +12,26 @@ parameters:
     type: string
     label: Flavor
     description: Flavor to be used
-    default: m1.small
+    default: m1.tiny
     constraints:
       - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
         description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.    
   private_net:
     type: string
     description: Id of the private network for the compute server
+    default: preservedNetwork
   private_subnet:
     type: string
     description: Id of the private sub network for the compute server
+    default: preservedSubnet
   public_net:
     type: string
-    description: Id of the public network for the compute server 
+    description: Id of the public network for the compute server
+    default: pub_net
   security_group_id:
     type: string
     description: Security group id
+    default: preservedSecurityGroup
   server_postfix:
     type: string
     description: The postfix of the server name
