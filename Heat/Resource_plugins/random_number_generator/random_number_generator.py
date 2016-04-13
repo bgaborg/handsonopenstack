@@ -61,11 +61,8 @@ class RandomNumberGenerator(resource.Resource):
             raise exception.StackValidationFailed(message=msg)
 
     def _resolve_attribute(self, name):
-        LOG.warning("Resolving attribute \"%s\"" % name)
         if name == self.NEXT_INT:
-            random_number = random.randint(self.properties[self.LOWER_BOUND], self.properties[self.UPPER_BOUND])
-            LOG.warning("Generated random number: %d" % random_number)
-            return random_number
+            return random.randint(self.properties[self.LOWER_BOUND], self.properties[self.UPPER_BOUND])
 
 def resource_mapping():
     return {
