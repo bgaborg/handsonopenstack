@@ -1,0 +1,24 @@
+heat_template_version: 2014-10-16
+
+description: RandomNumberGenerator resource type example
+
+parameters:
+  lower_bound:
+    type: number
+    description: "Lower bound"
+    default: 0
+  upper_bound:
+    type: number
+    description: "Upper bound"
+
+resources:
+  random_number_generator:
+    type: Nokia::lCase::RandomNumberGenerator
+    properties:
+      LowerBound: { get_param: lower_bound }
+      UpperBound: { get_param: upper_bound }
+
+outputs:
+  random_number:
+    description: Guaranteed to be random
+    value: { get_attr: [random_number_generator, NextInt] }
