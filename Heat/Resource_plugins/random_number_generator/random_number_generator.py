@@ -1,3 +1,9 @@
+"""
+To install:
+    Copy this file into one of the Heat plugin directories defined in heat.conf in the "plugin_dirs" option
+    Restart Heat (eg. systemctl restart openstack-heat-engine)
+"""
+
 from oslo_log import log as logging
 from heat.common import exception
 from heat.common.i18n import _
