@@ -13,7 +13,7 @@ from heat.engine import template
 from heat.engine import resource
 from heat.tests import common
 from heat.tests import utils
-from random_number_generator import random_number_generator
+from contrib.random_number_generator.random_number_generator import random_number_generator
 
 class TestRandomNumberGenerator(common.HeatTestCase):
     def setUp(self):
@@ -48,8 +48,7 @@ resources:
         rng = stack['rng']
 
         random_number = rng.FnGetAtt('NextInt')
-        self.assertRaises(exception.InvalidTemplateAttribute,
-                          rng.FnGetAtt, 'foo')
+        self.assertRaises(exception.InvalidTemplateAttribute, rng.FnGetAtt, 'foo')
         self.assertTrue(0 <= random_number <= 5)
 
     def test_missing_bounds(self):
@@ -61,8 +60,7 @@ resources:
     properties:
       UpperBound: 5
 '''
-        exc = self.assertRaises(exception.StackValidationFailed,
-                                self.create_stack, template_rng)
+        exc = self.assertRaises(exception.StackValidationFailed, self.create_stack, template_rng)
         self.assertEqual('Property error: resources.rng.properties: Property LowerBound not assigned',
                          six.text_type(exc))
 
@@ -76,7 +74,6 @@ resources:
       LowerBound: 5
       UpperBound: 0
 '''
-        exc = self.assertRaises(exception.StackValidationFailed,
-                                self.create_stack, template_rng)
+        exc = self.assertRaises(exception.StackValidationFailed, self.create_stack, template_rng)
         self.assertEqual('The value of parameter "UpperBound" (0) should be greater or equal to "LowerBound" (5).',
                          six.text_type(exc))
