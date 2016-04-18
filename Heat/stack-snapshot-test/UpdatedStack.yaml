@@ -1,0 +1,99 @@
+#    write heat template with a server, port, floating IP and floating IP association
+#        networks, image, flavor, security group as parameters
+#        output: floating_ip (the actual IP address)
+
+# PUB_NET_ID=$(neutron net-show --name pub_net -F id -f value)
+# PRESERVED_NET_ID=$(neutron net-show --name preservedNetwork -F id -f value)
+# PRESERVED_SUBNET_ID=$(neutron subnet-show --name preservedSubnet -F id -f value)
+# heat stack-create botosjeti --template-file SimpleStack.yaml -P "security_group_id=default;image_id=cirros0.3.2;public_net_id=$PUB_NET_ID;private_net_id=$PRESERVED_NET_ID;private_subnet_id=$PRESERVED_SUBNET_ID"
+# or
+# heat stack-create STACK_NAME -f SimpleStack.yaml -P "image_id=cirros0.3.4"
+
+heat_template_version: 2014-10-16
+
+description: Simple stack
+
+parameters:
+  image_id:
+    type: string
+    label: Image ID
+    description: Image to be used for compute instance
+  flavor:
+    type: string
+    label: Flavor
+    description: Flavor to be used
+    default: m1.tiny
+    constraints:
+      - allowed_values: [ m1.tiny, m1.small, m1.medium, m1.large, m1.xlarge ]
+        description: Value must be one of m1.tiny, m1.small, m1.medium, m1.large or m1.xlarge.
+  private_net:
+    type: string
+    description: Id of the private network for the compute server
+    default: preservedNetwork
+  private_subnet:
+    type: string
+    description: Id of the private sub network for the compute server
+    default: preservedSubnet
+  public_net:
+    type: string
+    description: Id of the public network for the compute server
+    default: pub_net
+  security_group_id:
+    type: string
+    description: Security group id
+    default: preservedSecurityGroup
+
+resources:
+  server1:
+    type: OS::Nova::Server
+    properties:
+      key_name: preservedSshKey
+      image: { get_param: image_id }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: server1_port }
+
+  server2:
+    type: OS::Nova::Server
+    properties:
+      key_name: preservedSshKey
+      image: { get_param: image_id }
+      flavor: { get_param: flavor }
+      networks:
+        - port: { get_resource: server2_port }
+
+  server1_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: private_net }
+      fixed_ips:
+        - subnet: { get_param: private_subnet }
+      security_groups: [{ get_param: security_group_id }]
+
+  server2_port:
+    type: OS::Neutron::Port
+    properties:
+      network: { get_param: private_net }
+      fixed_ips:
+        - subnet: { get_param: private_subnet }
+      security_groups: [{ get_param: security_group_id }]
+
+  server1_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server1_port }
+
+  server2_floating_ip:
+    type: OS::Neutron::FloatingIP
+    properties:
+      floating_network: { get_param: public_net }
+      port_id: { get_resource: server2_port }
+
+outputs:
+  floating_ip1:
+    description: The first floating IP of the server
+    value: { get_attr: [server1_floating_ip, floating_ip_address] }
+  floating_ip2:
+    description: The second floating IP of the server
+    value: { get_attr: [server2_floating_ip, floating_ip_address] }

@@ -9,6 +9,10 @@
 # PRESERVED_SUBNET_ID=$(neutron subnet-show --name preservedSubnet -F id -f value)
 # heat stack-create my-nested-stack --template-file autoscaling.yaml -P "security_group_id=default;image_id=cirros0.3.2;public_net_id=$PUB_NET_ID;private_net_id=$PRESERVED_NET_ID;private_subnet_id=$PRESERVED_SUBNET_ID" -e environment.yaml
 # big w00ts: https://support.rc.nectar.org.au/docs/heat/oddities-and-gotchas
+#
+# or
+#
+#
 
 heat_template_version: 2014-10-16
 
@@ -31,15 +35,19 @@ parameters:
   private_net_id:
     type: string
     description: Id of the private network for the compute server
+    default: preservedNetwork
   private_subnet_id:
     type: string
     description: Id of the private sub network for the compute server
+    default: preservedSubnet
   public_net_id:
     type: string
     description: Id of the public network for the compute server
+    default: pub_net
   security_group_id:
     type: string
     description: Security group id
+    default: preservedSecurityGroup
 
 resources:
   scaling_grouppa:
@@ -53,10 +61,10 @@ resources:
         properties:
           image_id: { get_param: image_id }
           flavor: { get_param: flavor }
-          private_net_id: { get_param: private_net_id }
-          private_subnet_id: { get_param: private_subnet_id }
-          public_net_id: { get_param: public_net_id }
-          security_group_id: { get_param: security_group_id }
+          private_net: { get_param: private_net_id }
+          private_subnet: { get_param: private_subnet_id }
+          public_net: { get_param: public_net_id }
+          security_group: { get_param: security_group_id }
 
   scale_out:
     type: OS::Heat::ScalingPolicy
@@ -75,7 +83,7 @@ resources:
 outputs:
   server_floating_ip:
     description: Floating IP of the first server
-    value: { get_attr: [scaling_grouppa, floating_ip] }
+    value: { get_attr: [scaling_grouppa, server_floating_ip] }
   scale_out_url:
     description: Scale out signal_url
     value: { get_attr: [scale_out, signal_url] }
