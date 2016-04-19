@@ -1,7 +1,9 @@
 """
 Hints about actually running this:
-  Create a new directory called random_number_generator in <heat>/contrib/
-  Copy the entire random_number_generator directory into this new directory
+  - Create a new directory called random_number_generator in <heat>/contrib/
+  - Copy the entire random_number_generator directory into the new directory
+  - If your Python version is lower than 3.3, you will need to create empty 
+    __init__.py files in the contrib and random_number_generator directories
 """
 
 import six
@@ -25,6 +27,10 @@ class TestRandomNumberGenerator(common.HeatTestCase):
         self.stack = self.parse_stack(template_format.parse(template_string))
         self.assertIsNone(self.stack.create())
         return self.stack
+
+    def update_stack(self, new_template_string):
+        new_stack = self.parse_stack(template_format.parse(new_template_string))
+        self.assertIsNone(self.stack.update(new_stack))
 
     def parse_stack(self, template_string):
         stack_name = 'test_stack'
@@ -77,3 +83,25 @@ resources:
         exc = self.assertRaises(exception.StackValidationFailed, self.create_stack, template_rng)
         self.assertEqual('The value of parameter "UpperBound" (0) should be greater or equal to "LowerBound" (5).',
                          six.text_type(exc))
+
+    def test_update(self):
+        template_rng = '''
+heat_template_version: 2014-10-16
+resources:
+  rng:
+    type: Nokia::lCase::RandomNumberGenerator
+    properties:
+      LowerBound: 42
+      UpperBound: 42
+'''
+        stack = self.create_stack(template_rng)
+        rng = stack['rng']
+
+        random_number = rng.FnGetAtt('NextInt')
+        self.assertEqual(42, random_number)
+
+        self.update_stack(template_rng.replace("42", "43"))
+        rng = stack['rng']
+        random_number = rng.FnGetAtt('NextInt')
+        self.assertEqual(43, random_number)
+

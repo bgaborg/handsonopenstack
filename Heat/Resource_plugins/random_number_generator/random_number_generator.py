@@ -35,11 +35,13 @@ class RandomNumberGenerator(resource.Resource):
         LOWER_BOUND: properties.Schema(
             properties.Schema.INTEGER,
             _('Lower bound of generated numbers (inclusive)'),
+            update_allowed=True,
             required=True
         ),
         UPPER_BOUND: properties.Schema(
             properties.Schema.INTEGER,
             _('Upper bound of generated numbers (inclusive)'),
+            update_allowed=True,
             required=True
         ),
     }
@@ -53,6 +55,10 @@ class RandomNumberGenerator(resource.Resource):
 
     def handle_create(self):
         random.seed
+
+    def handle_update(self, json_snippet, tmpl_diff, prop_diff):
+        if self.UPPER_BOUND in prop_diff or self.LOWER_BOUND in prop_diff:
+            LOG.info(("New bounds: [%d, %d]" % (self.properties[self.LOWER_BOUND], self.properties[self.UPPER_BOUND])))
 
     def validate(self):
         super(RandomNumberGenerator, self).validate()
