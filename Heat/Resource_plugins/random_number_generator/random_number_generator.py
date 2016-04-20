@@ -55,10 +55,21 @@ class RandomNumberGenerator(resource.Resource):
 
     def handle_create(self):
         random.seed
+        self.data_set("the_random_number", self._generate_random_num(self.properties[self.LOWER_BOUND], self.properties[self.UPPER_BOUND]))
 
     def handle_update(self, json_snippet, tmpl_diff, prop_diff):
-        if self.UPPER_BOUND in prop_diff or self.LOWER_BOUND in prop_diff:
+        if self.LOWER_BOUND in prop_diff or self.UPPER_BOUND in prop_diff:
             LOG.info(("New bounds: [%d, %d]" % (self.properties[self.LOWER_BOUND], self.properties[self.UPPER_BOUND])))
+
+        lowsy = self.properties[self.LOWER_BOUND]
+        upsy = self.properties[self.UPPER_BOUND]
+
+        if self.LOWER_BOUND in prop_diff:
+            lowsy = prop_diff[self.LOWER_BOUND]
+        if self.UPPER_BOUND in prop_diff:
+            upsy = prop_diff[self.UPPER_BOUND]
+
+        self.data_set("the_random_number", self._generate_random_num(lowsy, upsy))
 
     def validate(self):
         super(RandomNumberGenerator, self).validate()
@@ -74,7 +85,10 @@ class RandomNumberGenerator(resource.Resource):
 
     def _resolve_attribute(self, name):
         if name == self.NEXT_INT:
-            return random.randint(self.properties[self.LOWER_BOUND], self.properties[self.UPPER_BOUND])
+            return self.data().get("the_random_number")
+
+    def _generate_random_num(self, lowsy, upsy):
+        return random.randint(lowsy, upsy)
 
 def resource_mapping():
     return {
